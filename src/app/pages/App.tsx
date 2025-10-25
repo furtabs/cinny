@@ -36,12 +36,14 @@ function App() {
               >
                 {(clientConfig) => (
                   <ClientConfigProvider value={clientConfig}>
-                    <QueryClientProvider client={queryClient}>
-                      <JotaiProvider>
-                        <RouterProvider router={createRouter(clientConfig, screenSize)} />
-                      </JotaiProvider>
-                      <ReactQueryDevtools initialIsOpen={false} />
-                    </QueryClientProvider>
+                    <CallProvider>
+                      <QueryClientProvider client={queryClient}>
+                        <JotaiProvider>
+                          <RouterProvider router={createRouter(clientConfig, screenSize)} />
+                        </JotaiProvider>
+                        <ReactQueryDevtools initialIsOpen={false} />
+                      </QueryClientProvider>
+                    </CallProvider>
                   </ClientConfigProvider>
                 )}
               </ClientConfigLoader>

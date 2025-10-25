@@ -80,12 +80,7 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   const canMessage = permissions.event(EventType.RoomMessage, mx.getSafeUserId());
   const callOngoing = useCallOngoing(room);
   const isDirect = useIsDirectRoom();
-  // Temporarily disabled CallContext to debug error
-  // const { callState, startCall, endCall, updateCallEventSent } = useCallContext();
-  const callState = { isActive: false, roomId: null, callStartTime: null, lastCallEventSent: null };
-  const startCall = (roomId: string) => {};
-  const endCall = () => {};
-  const updateCallEventSent = (event: 'started' | 'ended') => {};
+  const { callState, startCall, endCall, updateCallEventSent } = useCallContext();
 
   // Format duration in human-readable format
   const formatCallDuration = useCallback((durationMs: number): string => {
@@ -239,8 +234,7 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
     <Page ref={roomViewRef}>
       <RoomViewHeader onCallClick={handleCallStart} callJoined={callJoined} callOngoing={callOngoing} />
       <Box grow="Yes" direction="Row">
-        {/* Temporarily disabled draggable call window to debug error */}
-        {false && callOngoing && (
+        {callOngoing && (
           <DraggableCallWindow
             onClose={handleCallClose}
             roomName={room.name || room.roomId}
