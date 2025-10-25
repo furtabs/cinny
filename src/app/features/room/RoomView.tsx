@@ -150,20 +150,29 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
 
   // Listen for actual call session start to send system notification and set start time
   useEffect(() => {
-    // Only send started event if we haven't already sent one and we have a valid call session
-    // But don't auto-start calls on refresh - only when user explicitly starts them
-    if (callOngoing && !callState.callStartTime && callState.lastCallEventSent !== 'started') {
+    // Only send started event if we have an active call state AND a valid call session
+    // This ensures we only send events for explicitly started calls
+    if (callOngoing && callState.isActive && callState.roomId === roomId && !callState.lastCallEventSent) {
       const session = mx.matrixRTC.getRoomSession(room);
       const hasActiveRTCSession = session.memberships.length > 0;
       
-      // Only auto-start if we have an active call state (user explicitly started it)
-      // Don't auto-start just because there's an RTC session from refresh
-      if (hasActiveRTCSession && callState.isActive) {
-        // Update the call start time but don't send a new "started" event
-        // This prevents duplicate events on refresh
-        console.log('Recovering call state after refresh - not sending new started event');
+      if (hasActiveRTCSession) {
+        // Send a system state event for call start
+        if (canMessage) {
+          const content = {
+            call_started: true,
+            timestamp: Date.now(),
+          };
+          console.log('Sending call started state event:', content);
+          mx.sendStateEvent(roomId, 'org.matrix.msc3401.call' as any, content, 'call_status').then((result) => {
+            console.log('Call started state event sent successfully:', result);
+            updateCallEventSent('started');
+          }).catch((error) => {
+            console.error('Failed to send call started state event:', error);
+          });
+        }
       }
-    } else if (!callOngoing && callState.callStartTime && callState.lastCallEventSent !== 'ended') {
+    } else if (!callOngoing && callState.isActive && callState.roomId === roomId && callState.callStartTime && callState.lastCallEventSent !== 'ended') {
       // Call session ended, send end notification and reset state
       if (canMessage) {
         const duration = Date.now() - callState.callStartTime;
@@ -183,7 +192,7 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
       }
       endCall();
     }
-  }, [callOngoing, callState.callStartTime, callState.lastCallEventSent, canMessage, mx, roomId, formatCallDuration, room, updateCallEventSent, endCall, callState.isActive]);
+  }, [callOngoing, callState.isActive, callState.roomId, callState.callStartTime, callState.lastCallEventSent, canMessage, mx, roomId, formatCallDuration, room, updateCallEventSent, endCall]);
 
   // Handle page reload/unload to clean up call state
   useEffect(() => {
@@ -224,7 +233,7 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
     <Page ref={roomViewRef}>
       <RoomViewHeader onCallClick={handleCallStart} callJoined={callJoined} callOngoing={callOngoing} />
       <Box grow="Yes" direction="Row">
-        {callOngoing && (
+        {callState.isActive && callState.roomId === roomId && (
           <DraggableCallWindow
             onClose={handleCallClose}
             roomName={room.name || room.roomId}

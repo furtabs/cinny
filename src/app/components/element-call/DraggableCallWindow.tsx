@@ -24,6 +24,11 @@ export const DraggableCallWindow: React.FC<DraggableCallWindowProps> = ({
       return; // Don't drag if clicking on buttons
     }
     
+    // Bring window to front when clicked
+    if (windowRef.current) {
+      windowRef.current.style.zIndex = '999999';
+    }
+    
     setIsDragging(true);
     const rect = windowRef.current?.getBoundingClientRect();
     if (rect) {
@@ -80,11 +85,14 @@ export const DraggableCallWindow: React.FC<DraggableCallWindowProps> = ({
     border: '1px solid #333',
     borderRadius: '8px',
     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-    zIndex: 1000,
+    zIndex: 999999, // Very high z-index to stay on top of everything
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
     transition: isDragging ? 'none' : 'height 0.2s ease',
+    // Ensure it stays on top and is always visible
+    isolation: 'isolate',
+    contain: 'layout style paint',
   };
 
   const headerStyle: React.CSSProperties = {
@@ -105,7 +113,16 @@ export const DraggableCallWindow: React.FC<DraggableCallWindowProps> = ({
   };
 
   return (
-    <div ref={windowRef} style={windowStyle}>
+    <div 
+      ref={windowRef} 
+      style={windowStyle}
+      onClick={() => {
+        // Bring window to front when clicked anywhere
+        if (windowRef.current) {
+          windowRef.current.style.zIndex = '999999';
+        }
+      }}
+    >
       {/* Window Header */}
       <div
         style={headerStyle}
