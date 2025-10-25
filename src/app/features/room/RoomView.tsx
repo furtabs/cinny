@@ -82,6 +82,25 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   const isDirect = useIsDirectRoom();
   const { callState, startCall, endCall, updateCallEventSent } = useCallContext();
 
+  // Cleanup call state when component unmounts
+  useEffect(() => {
+    return () => {
+      // Don't cleanup call state on unmount - let it persist across navigation
+      // Only cleanup on actual page unload
+    };
+  }, []);
+
+  // Debug call widget visibility
+  useEffect(() => {
+    const shouldShow = callState.isActive && callState.roomId === roomId;
+    console.log('Call widget visibility check:', {
+      callStateIsActive: callState.isActive,
+      callStateRoomId: callState.roomId,
+      currentRoomId: roomId,
+      shouldShowCallWidget: shouldShow
+    });
+  }, [callState.isActive, callState.roomId, roomId]);
+
   // Format duration in human-readable format
   const formatCallDuration = useCallback((durationMs: number): string => {
     const seconds = Math.floor(durationMs / 1000);
@@ -98,13 +117,36 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   }, []);
 
   const handleCallStart = useCallback(() => {
-    // Don't allow starting a call if one is already ongoing
-    if (callOngoing) {
+    console.log('Call button clicked!', {
+      callOngoing,
+      callStateIsActive: callState.isActive,
+      callStateRoomId: callState.roomId,
+      currentRoomId: roomId
+    });
+    
+    // Don't allow starting a call if we already have an active call in our context
+    if (callState.isActive && callState.roomId === roomId) {
+      console.log('Call already active in context, not starting new call');
       return;
     }
     
+    console.log('Starting call for room:', roomId);
+    
+    // Clean up any lingering RTC sessions before starting new call
+    try {
+      const session = mx.matrixRTC.getRoomSession(room);
+      if (session.memberships.length > 0) {
+        console.log('Cleaning up lingering RTC session before starting new call');
+        // Force cleanup the old session
+        session.memberships = [];
+      }
+    } catch (error) {
+      console.error('Error cleaning up RTC session:', error);
+    }
+    
     startCall(roomId);
-  }, [callOngoing, startCall, roomId]);
+    console.log('Call started, new state:', callState);
+  }, [callState.isActive, callState.roomId, startCall, roomId, callState, mx, room]);
 
   const handleCallClose = useCallback(() => {
     // If we have an active call, send the ended message first

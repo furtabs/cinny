@@ -42,12 +42,15 @@ export const CallProvider: React.FC<CallProviderProps> = ({ children }) => {
   });
 
   const startCall = useCallback((roomId: string) => {
-    setCallState({
+    console.log('CallContext: startCall called with roomId:', roomId);
+    const newState = {
       isActive: true,
       roomId,
       callStartTime: Date.now(),
       lastCallEventSent: null,
-    });
+    };
+    console.log('CallContext: Setting call state to:', newState);
+    setCallState(newState);
   }, []);
 
   const endCall = useCallback(() => {
