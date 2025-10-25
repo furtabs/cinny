@@ -257,8 +257,9 @@ const RoomMenu = forwardRef<HTMLDivElement, RoomMenuProps>(({ room, requestClose
 interface RoomViewHeaderProps {
   onCallClick?: () => void;
   callJoined?: boolean;
+  callOngoing?: boolean;
 }
-export function RoomViewHeader({ onCallClick, callJoined }: RoomViewHeaderProps) {
+export function RoomViewHeader({ onCallClick, callJoined, callOngoing }: RoomViewHeaderProps) {
   const navigate = useNavigate();
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
@@ -278,7 +279,6 @@ export function RoomViewHeader({ onCallClick, callJoined }: RoomViewHeaderProps)
   const avatarUrl = avatarMxc
     ? mxcUrlToHttp(mx, avatarMxc, useAuthentication, 96, 96, 'crop') ?? undefined
     : undefined;
-  const callOngoing = useCallOngoing(room);
 
   const [peopleDrawer, setPeopleDrawer] = useSetting(settingsAtom, 'isPeopleDrawer');
 

@@ -1382,6 +1382,74 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
           </Event>
         );
       },
+      'org.matrix.msc3401.call': (mEventId, mEvent, item) => {
+        const highlighted = focusItem?.index === item && focusItem.highlight;
+        const senderId = mEvent.getSender() ?? '';
+        const senderName = getMemberDisplayName(room, senderId) || getMxIdLocalPart(senderId);
+        const content = mEvent.getContent();
+        const stateKey = mEvent.getStateKey();
+
+        console.log('Rendering call event:', { mEventId, content, stateKey, senderName });
+
+        const timeJSX = (
+          <Time
+            ts={mEvent.getTs()}
+            compact={messageLayout === MessageLayout.Compact}
+            hour24Clock={hour24Clock}
+            dateFormatString={dateFormatString}
+          />
+        );
+
+        // Only render call_status state key events
+        if (stateKey !== 'call_status') {
+          console.log('Skipping call event - wrong state key:', stateKey);
+          return null;
+        }
+
+        let messageText = '';
+        let iconSrc = Icons.Phone;
+
+        if (content.call_started) {
+          messageText = 'started a call';
+          iconSrc = Icons.Phone;
+          console.log('Rendering call started event');
+        } else if (content.call_ended) {
+          messageText = `ended the call (${content.duration || 'unknown duration'})`;
+          iconSrc = Icons.Phone; // Use same phone icon but with different text
+          console.log('Rendering call ended event');
+        } else {
+          console.log('Skipping call event - no recognized content:', content);
+          return null; // Don't render other call events
+        }
+
+        return (
+          <Event
+            key={mEvent.getId()}
+            data-message-item={item}
+            data-message-id={mEventId}
+            room={room}
+            mEvent={mEvent}
+            highlight={highlighted}
+            messageSpacing={messageSpacing}
+            canDelete={canRedact || mEvent.getSender() === mx.getUserId()}
+            hideReadReceipts={hideActivity}
+            showDeveloperTools={showDeveloperTools}
+          >
+            <EventContent
+              messageLayout={messageLayout}
+              time={timeJSX}
+              iconSrc={iconSrc}
+              content={
+                <Box grow="Yes" direction="Column">
+                  <Text size="T300" priority="300">
+                    <b>{senderName}</b> {messageText}
+                  </Text>
+                </Box>
+              }
+            />
+          </Event>
+        );
+      },
       [StateEvent.RoomTopic]: (mEventId, mEvent, item) => {
         const highlighted = focusItem?.index === item && focusItem.highlight;
         const senderId = mEvent.getSender() ?? '';

@@ -6,6 +6,7 @@ import { useMatrixClient } from '../../hooks/useMatrixClient';
 import { useEventEmitter } from './utils';
 import { useIsDirectRoom, useRoom } from '../../hooks/useRoom';
 import { useCallOngoing } from '../../hooks/useCallOngoing';
+import { useActiveTheme, ThemeKind } from '../../hooks/useTheme';
 
 export enum CallWidgetActions {
   // All of these actions are currently specific to Jitsi and Element Call
@@ -74,6 +75,7 @@ export function CallView({
   const room = useRoom();
   const client = useMatrixClient();
   const iframe = useRef<HTMLIFrameElement>(null);
+  const activeTheme = useActiveTheme();
 
   // Model state
   const [elementCall, setElementCall] = useState<ElementCall | null>();
@@ -85,9 +87,21 @@ export function CallView({
   const callOngoing = useCallOngoing(room);
   const initialCallOngoing = React.useRef(callOngoing);
   const initialIsDirect = React.useRef(isDirect);
+  
+  // Update refs when values change (important for refresh recovery)
+  React.useEffect(() => {
+    initialCallOngoing.current = callOngoing;
+  }, [callOngoing]);
+  
+  React.useEffect(() => {
+    initialIsDirect.current = isDirect;
+  }, [isDirect]);
+
   useEffect(() => {
     if (client && room && !elementCall) {
-      const e = new ElementCall(client, room, initialIsDirect.current, initialCallOngoing.current);
+      // Force dark theme for Element Call to match Cinny's dark theme
+      const theme = 'dark';
+      const e = new ElementCall(client, room, initialIsDirect.current, initialCallOngoing.current, theme);
       setElementCall(e);
     }
   }, [client, room, setElementCall, elementCall]);
@@ -122,22 +136,68 @@ export function CallView({
     onClose?.();
   });
 
+  // Force close call when component unmounts or page reloads
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (elementCall) {
+        elementCall.forceCleanup();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      // If page becomes hidden, force cleanup
+      if (document.hidden && elementCall) {
+        elementCall.forceCleanup();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      // Clean up call when component unmounts
+      if (elementCall) {
+        elementCall.forceCleanup();
+      }
+    };
+  }, [elementCall]);
+
+  // Listen for cleanup events from ElementCall
+  useEventEmitter(elementCall, 'cleanup', () => {
+    setState(State.CanClose);
+    onClose?.();
+  });
+
   // render component
   return (
     <div style={containerStyle(state === State.HungUp)}>
-      {/* Exit button for lobby state */}
-      {state === State.Lobby && (
-        <Button
-          variant="Secondary"
-          onClick={() => {
-            setState(State.CanClose);
-            onClose?.();
-          }}
-          style={closeButtonStyle}
-        >
-          <Text size="B400">Close</Text>
-        </Button>
-      )}
+      {/* Exit button - always visible to allow closing */}
+      <Button
+        variant="Secondary"
+        onClick={() => {
+          console.log('Close button clicked - terminating call');
+          // Send hangup action to the widget first
+          if (widgetApi) {
+            try {
+              widgetApi.transport.send(action(CallWidgetActions.HangupCall), {});
+              console.log('Sent hangup action to widget');
+            } catch (error) {
+              console.error('Error sending hangup action:', error);
+            }
+          }
+          // Force cleanup before closing
+          if (elementCall) {
+            elementCall.forceCleanup();
+          }
+          setState(State.CanClose);
+          onClose?.();
+        }}
+        style={closeButtonStyle}
+      >
+        <Text size="B400">Close</Text>
+      </Button>
       <iframe
         ref={iframe}
         allow={iframeFeatures}

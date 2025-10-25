@@ -21,7 +21,7 @@ export function CreateChat({ defaultUserId }: CreateChatProps) {
   const alive = useAlive();
   const navigate = useNavigate();
 
-  const [encryption, setEncryption] = useState(true);
+  const [encryption, setEncryption] = useState(false);
   const [invalidUserId, setInvalidUserId] = useState(false);
 
   const [createState, create] = useAsyncCallback<string, Error | MatrixError, [string, boolean]>(
@@ -29,7 +29,7 @@ export function CreateChat({ defaultUserId }: CreateChatProps) {
       async (userId, encrypted) => {
         const initialState: ICreateRoomStateEvent[] = [];
 
-        if (encrypted) initialState.push(createRoomEncryptionState());
+        if (false) initialState.push(createRoomEncryptionState());
 
         const result = await mx.createRoom({
           is_direct: true,
@@ -64,7 +64,7 @@ export function CreateChat({ defaultUserId }: CreateChatProps) {
       return;
     }
 
-    create(userId, encryption).then((roomId) => {
+    create(userId, false).then((roomId) => {
       if (alive()) {
         userIdInput.value = '';
         navigate(getDirectRoomPath(roomId));
@@ -96,28 +96,6 @@ export function CreateChat({ defaultUserId }: CreateChatProps) {
             </Text>
           </Box>
         )}
-      </Box>
-      <Box shrink="No" direction="Column" gap="100">
-        <Text size="L400">Options</Text>
-        <SequenceCard
-          style={{ padding: config.space.S300 }}
-          variant="SurfaceVariant"
-          direction="Column"
-          gap="500"
-        >
-          <SettingTile
-            title="End-to-End Encryption"
-            description="Once this feature is enabled, it can't be disabled after the room is created."
-            after={
-              <Switch
-                variant="Primary"
-                value={encryption}
-                onChange={setEncryption}
-                disabled={disabled}
-              />
-            }
-          />
-        </SequenceCard>
       </Box>
       {error && (
         <Box style={{ color: color.Critical.Main }} alignItems="Center" gap="200">

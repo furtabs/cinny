@@ -8,5 +8,7 @@
   "hashRouter": {
     "enabled": false,
     "basename": "/"
-  }
+  },
+  
+  "defaultEncryption": false
 }

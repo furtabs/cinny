@@ -14,6 +14,7 @@ import { logger } from 'matrix-js-sdk/src/logger';
 
 import { arrayFastClone, elementCallCapabilities } from './utils';
 import CallWidgetDriver from './CallWidgetDriver';
+import { useActiveTheme, ThemeKind } from '../../hooks/useTheme';
 
 export enum ElementCallIntent {
   StartCall = 'start_call',
@@ -22,7 +23,7 @@ export enum ElementCallIntent {
   JoinExistingDM = 'join_existing_dm',
 }
 
-function createCallWidget(room: Room, client: MatrixClient, intent: string): Widget {
+function createCallWidget(room: Room, client: MatrixClient, intent: string, theme: string = 'dark'): Widget {
   const perParticipantE2EE = room?.hasEncryptionStateEvent() ?? false;
 
   const baseUrl = new URL(window.location.href).origin;
@@ -37,7 +38,7 @@ function createCallWidget(room: Room, client: MatrixClient, intent: string): Wid
     roomId: room.roomId,
     baseUrl: client.baseUrl,
     lang: 'en-EN',
-    theme: 'light',
+    theme,
   });
   const paramsSearch = new URLSearchParams({
     widgetId,
@@ -73,7 +74,8 @@ export default class ElementCall extends EventEmitter {
     private client: MatrixClient,
     private room: Room,
     isDirect: boolean,
-    callOngoing: boolean
+    callOngoing: boolean,
+    theme: string = 'dark'
   ) {
     super();
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -84,7 +86,7 @@ export default class ElementCall extends EventEmitter {
       ['join_existing', ElementCallIntent.JoinExisting],
     ]).get((callOngoing ? 'join_existing' : 'start_call') + (isDirect ? '_dm' : ''))!;
 
-    this.widget = createCallWidget(this.room, this.client, intent);
+    this.widget = createCallWidget(this.room, this.client, intent, theme);
   }
 
   public get widgetApi(): ClientWidgetApi | null {
@@ -148,11 +150,16 @@ export default class ElementCall extends EventEmitter {
    * @param opts
    */
   public stopMessaging(): void {
-    if (this.messaging) {
-      this.messaging.stop();
+    try {
+      if (this.messaging) {
+        this.messaging.stop();
+      }
+    } catch (error) {
+      logger.error('Error stopping Element Call messaging:', error);
     }
     this.messaging = null;
 
+    // Remove all event listeners
     this.client.off(ClientEvent.Event, this.onEvent);
     this.client.off(MatrixEventEvent.Decrypted, this.onEventDecrypted);
     this.client.off(RoomStateEvent.Events, this.onStateUpdate);
@@ -161,6 +168,34 @@ export default class ElementCall extends EventEmitter {
     // Clear internal state
     this.readUpToMap = {};
     this.eventsToFeed = new WeakSet<MatrixEvent>();
+    
+    // Emit cleanup event
+    this.emit('cleanup');
+  }
+
+  /**
+   * Force cleanup - used when page reloads or component unmounts
+   */
+  public forceCleanup(): void {
+    this.stopMessaging();
+    this.removeAllListeners();
+    
+    // Also try to clean up any lingering RTC session state
+    try {
+      const session = this.client.matrixRTC.getRoomSession(this.room);
+      if (session.memberships.length > 0) {
+        console.log('Cleaning up lingering RTC session after force cleanup');
+        // Try to leave the session by removing our membership
+        const ourUserId = this.client.getSafeUserId();
+        const ourMembership = session.memberships.find(m => m.sender === ourUserId);
+        if (ourMembership) {
+          console.log('Removing our membership from RTC session during cleanup');
+          session.memberships = session.memberships.filter(m => m.sender !== ourUserId);
+        }
+      }
+    } catch (error) {
+      logger.error('Error during RTC session cleanup:', error);
+    }
   }
 
   private onEvent = (ev: MatrixEvent): void => {

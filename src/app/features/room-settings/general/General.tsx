@@ -11,7 +11,6 @@ import {
   RoomLocalAddresses,
   RoomPublishedAddresses,
   RoomPublish,
-  RoomUpgrade,
 } from '../../common-settings/general';
 import { useRoomCreators } from '../../../hooks/useRoomCreators';
 import { useRoomPermissions } from '../../../hooks/useRoomPermissions';
@@ -57,10 +56,6 @@ export function General({ requestClose }: GeneralProps) {
                 <Text size="L400">Addresses</Text>
                 <RoomPublishedAddresses permissions={permissions} />
                 <RoomLocalAddresses permissions={permissions} />
-              </Box>
-              <Box direction="Column" gap="100">
-                <Text size="L400">Advance Options</Text>
-                <RoomUpgrade permissions={permissions} requestClose={requestClose} />
               </Box>
             </Box>
           </PageContent>

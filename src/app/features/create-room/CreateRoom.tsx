@@ -23,6 +23,7 @@ import {
   restrictedSupported,
 } from '../../utils/matrix';
 import { useMatrixClient } from '../../hooks/useMatrixClient';
+import { useClientConfig } from '../../hooks/useClientConfig';
 import { millisecondsToMinutes, replaceSpaceWithDash } from '../../utils/common';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
 import { useCapabilities } from '../../hooks/useCapabilities';
@@ -35,7 +36,6 @@ import {
   CreateRoomData,
   CreateRoomKind,
   CreateRoomKindSelector,
-  RoomVersionSelector,
   useAdditionalCreators,
 } from '../../components/create-room';
 
@@ -52,15 +52,16 @@ type CreateRoomFormProps = {
 };
 export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormProps) {
   const mx = useMatrixClient();
+  const clientConfig = useClientConfig();
   const alive = useAlive();
 
   const capabilities = useCapabilities();
   const roomVersions = capabilities['m.room_versions'];
-  const [selectedRoomVersion, selectRoomVersion] = useState(roomVersions?.default ?? '1');
+  const [selectedRoomVersion, selectRoomVersion] = useState('10');
   useEffect(() => {
-    // capabilities load async
-    selectRoomVersion(roomVersions?.default ?? '1');
-  }, [roomVersions?.default]);
+    // Always use Matrix v10
+    selectRoomVersion('10');
+  }, []);
 
   const allowRestricted = space && restrictedSupported(selectedRoomVersion);
 
@@ -79,12 +80,6 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
   const allowKnockRestricted =
     kind === CreateRoomKind.Restricted && knockRestrictedSupported(selectedRoomVersion);
 
-  const handleRoomVersionChange = (version: string) => {
-    if (!restrictedSupported(version)) {
-      setKind(CreateRoomKind.Private);
-    }
-    selectRoomVersion(version);
-  };
 
   const [createState, create] = useAsyncCallback<string, Error | MatrixError, [CreateRoomData]>(
     useCallback((data) => createRoom(mx, data), [mx])
@@ -123,7 +118,7 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
       name: roomName,
       topic: roomTopic || undefined,
       aliasLocalPart: publicRoom ? aliasLocalPart : undefined,
-      encryption: publicRoom ? false : encryption,
+      encryption: false,
       knock: roomKnock,
       allowFederation: federation,
       additionalCreators: allowAdditionalCreators ? additionalCreators : undefined,
@@ -201,28 +196,7 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
             />
           </SequenceCard>
         )}
-        {kind !== CreateRoomKind.Public && (
-          <>
-            <SequenceCard
-              style={{ padding: config.space.S300 }}
-              variant="SurfaceVariant"
-              direction="Column"
-              gap="500"
-            >
-              <SettingTile
-                title="End-to-End Encryption"
-                description="Once this feature is enabled, it can't be disabled after the room is created."
-                after={
-                  <Switch
-                    variant="Primary"
-                    value={encryption}
-                    onChange={setEncryption}
-                    disabled={disabled}
-                  />
-                }
-              />
-            </SequenceCard>
-            {advance && (allowKnock || allowKnockRestricted) && (
+        {kind !== CreateRoomKind.Public && advance && (allowKnock || allowKnockRestricted) && (
               <SequenceCard
                 style={{ padding: config.space.S300 }}
                 variant="SurfaceVariant"
@@ -243,8 +217,6 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
                 />
               </SequenceCard>
             )}
-          </>
-        )}
 
         <SequenceCard
           style={{ padding: config.space.S300 }}
@@ -265,14 +237,6 @@ export function CreateRoomForm({ defaultKind, space, onCreate }: CreateRoomFormP
             }
           />
         </SequenceCard>
-        {advance && (
-          <RoomVersionSelector
-            versions={roomVersions?.available ? Object.keys(roomVersions.available) : ['1']}
-            value={selectedRoomVersion}
-            onChange={handleRoomVersionChange}
-            disabled={disabled}
-          />
-        )}
       </Box>
 
       {error && (

@@ -1,4 +1,4 @@
-# Cinny
+# Kitsu
 <p>
     <a href="https://github.com/ajbura/cinny/releases">
         <img alt="GitHub release downloads" src="https://img.shields.io/github/downloads/ajbura/cinny/total?logo=github&style=social"></a>
@@ -9,7 +9,7 @@
     <a href="https://twitter.com/intent/follow?screen_name=cinnyapp">
         <img alt="Follow on Twitter" src="https://img.shields.io/twitter/follow/cinnyapp?logo=twitter&style=social"></a>
     <a href="https://cinny.in/#sponsor">
-        <img alt="Sponsor Cinny" src="https://img.shields.io/opencollective/all/cinny?logo=opencollective&style=social"></a>
+        <img alt="Sponsor Kitsu" src="https://img.shields.io/opencollective/all/cinny?logo=opencollective&style=social"></a>
 </p>
 
 A Matrix client focusing primarily on simple, elegant and secure interface. The main goal is to have an instant messaging application that is easy on people and has a modern touch.
@@ -24,7 +24,7 @@ The web app is available at [app.cinny.in](https://app.cinny.in/) and gets updat
 You can also download our desktop app from the [cinny-desktop repository](https://github.com/cinnyapp/cinny-desktop).
 
 ## Self-hosting
-To host Cinny on your own, simply download the tarball from [GitHub releases](https://github.com/cinnyapp/cinny/releases/latest), and serve the files from `dist/` using your preferred webserver. Alternatively, you can just pull the docker image from [DockerHub](https://hub.docker.com/r/ajbura/cinny) or [GitHub Container Registry](https://github.com/cinnyapp/cinny/pkgs/container/cinny).
+To host Kitsu on your own, simply download the tarball from [GitHub releases](https://github.com/cinnyapp/cinny/releases/latest), and serve the files from `dist/` using your preferred webserver. Alternatively, you can just pull the docker image from [DockerHub](https://hub.docker.com/r/ajbura/cinny) or [GitHub Container Registry](https://github.com/cinnyapp/cinny/pkgs/container/cinny).
 
 * The default homeservers and explore pages are defined in [`config.json`](config.json).
 

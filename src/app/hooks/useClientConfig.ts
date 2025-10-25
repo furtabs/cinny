@@ -18,6 +18,7 @@ export type ClientConfig = {
   };
 
   hashRouter?: HashRouterConfig;
+  defaultEncryption?: boolean;
 };
 
 const ClientConfigContext = createContext<ClientConfig | null>(null);

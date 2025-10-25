@@ -1,4 +1,4 @@
-# Contributing to Cinny
+# Contributing to Kitsu
 
 First off, thanks for taking the time to contribute! ❤️
 
