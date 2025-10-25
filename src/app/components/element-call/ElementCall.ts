@@ -29,6 +29,25 @@ function createCallWidget(room: Room, client: MatrixClient, intent: string, them
   const baseUrl = new URL(window.location.href).origin;
   const url = new URL('./widgets/element-call/index.html#', baseUrl); // this strips hash fragment from baseUrl
   const widgetId = 'io-element-call-widget-id';
+  
+  // Cinny color scheme based on theme
+  const isDark = theme === 'dark';
+  const colors = isDark ? {
+    accentColor: '#BDB6EC', // Cinny Primary.Main (dark)
+    primaryColor: '#BDB6EC', // Cinny Primary.Main (dark)
+    backgroundColor: '#1A1A1A', // Cinny Background.Container (dark)
+    surfaceColor: '#262626', // Cinny Surface.Container (dark)
+    textColor: '#F2F2F2', // Cinny Background.OnContainer (dark)
+    secondaryColor: '#333333', // Cinny SurfaceVariant.Container (dark)
+  } : {
+    accentColor: '#1245A8', // Cinny Primary.Main (light)
+    primaryColor: '#1245A8', // Cinny Primary.Main (light)
+    backgroundColor: '#DEDEDE', // Cinny Background.Container (light)
+    surfaceColor: '#EAEAEA', // Cinny Surface.Container (light)
+    textColor: '#000000', // Cinny Background.OnContainer (light)
+    secondaryColor: '#DEDEDE', // Cinny SurfaceVariant.Container (light)
+  };
+  
   // Splice together the Element Call URL for this call
   const paramsHash = new URLSearchParams({
     perParticipantE2EE: perParticipantE2EE ? 'true' : 'false',
@@ -39,6 +58,28 @@ function createCallWidget(room: Room, client: MatrixClient, intent: string, them
     baseUrl: client.baseUrl,
     lang: 'en-EN',
     theme,
+    // Disable auto-camera like Discord
+    startCameraOff: 'true',
+    disableVideo: 'true',
+    videoEnabled: 'false',
+    // Additional video control parameters
+    autoStartVideo: 'false',
+    videoMuted: 'true',
+    cameraOff: 'true',
+    disableCamera: 'true',
+    noVideo: 'true',
+    audioOnly: 'true',
+    // Additional theme customization to match Cinny
+    hideHeader: 'true',
+    hideScreenshare: 'false',
+    hideParticipants: 'false',
+    // Cinny theme colors
+    accentColor: colors.accentColor,
+    primaryColor: colors.primaryColor,
+    backgroundColor: colors.backgroundColor,
+    surfaceColor: colors.surfaceColor,
+    textColor: colors.textColor,
+    secondaryColor: colors.secondaryColor,
   });
   const paramsSearch = new URLSearchParams({
     widgetId,

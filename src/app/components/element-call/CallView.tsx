@@ -19,7 +19,7 @@ export function action(type: CallWidgetActions): string {
 }
 
 const iframeFeatures =
-  'microphone; camera; encrypted-media; autoplay; display-capture; clipboard-write; ' +
+  'microphone; encrypted-media; autoplay; display-capture; clipboard-write; ' +
   'clipboard-read;';
 const sandboxFlags =
   'allow-forms allow-popups allow-popups-to-escape-sandbox ' +
@@ -99,12 +99,12 @@ export function CallView({
 
   useEffect(() => {
     if (client && room && !elementCall) {
-      // Force dark theme for Element Call to match Cinny's dark theme
-      const theme = 'dark';
+      // Use Cinny's active theme for Element Call to match the current theme
+      const theme = activeTheme.kind === ThemeKind.Dark ? 'dark' : 'light';
       const e = new ElementCall(client, room, initialIsDirect.current, initialCallOngoing.current, theme);
       setElementCall(e);
     }
-  }, [client, room, setElementCall, elementCall]);
+  }, [client, room, setElementCall, elementCall, activeTheme]);
 
   // Start the messaging over the widget api.
   useEffect(() => {
@@ -120,6 +120,18 @@ export function CallView({
   useEventEmitter(elementCall, 'ready', () => {
     setWidgetApi(elementCall?.widgetApi ?? null);
     setState(State.Lobby);
+    
+    // Try to disable video after widget is ready
+    if (elementCall?.widgetApi) {
+      try {
+        // Send a message to disable video
+        elementCall.widgetApi.transport.send('io.element.setVideoMuted', { muted: true });
+        elementCall.widgetApi.transport.send('io.element.setAudioMuted', { muted: false });
+        console.log('Sent video disable commands to Element Call widget');
+      } catch (error) {
+        console.error('Error sending video disable commands:', error);
+      }
+    }
   });
 
   // Use widget api to listen for hangup/join/close actions
