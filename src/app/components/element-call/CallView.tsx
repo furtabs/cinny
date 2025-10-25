@@ -148,7 +148,7 @@ export function CallView({
     onClose?.();
   });
 
-  // Force close call when component unmounts or page reloads
+  // Force close call only on page reload/unload, not on navigation or tab switching
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (elementCall) {
@@ -156,23 +156,12 @@ export function CallView({
       }
     };
 
-    const handleVisibilityChange = () => {
-      // If page becomes hidden, force cleanup
-      if (document.hidden && elementCall) {
-        elementCall.forceCleanup();
-      }
-    };
-
+    // Only cleanup on actual page unload, not tab switching or navigation
     window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      // Clean up call when component unmounts
-      if (elementCall) {
-        elementCall.forceCleanup();
-      }
+      // Don't cleanup on component unmount - keep call active across navigation
     };
   }, [elementCall]);
 

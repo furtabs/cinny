@@ -24,11 +24,19 @@ export const useCallOngoing = (room: Room) => {
 
     const start = (roomId: string) => {
       if (roomId !== room.roomId) return;
+      console.log('RTC session started for room:', roomId);
       setCallOngoing(true);
     };
     const end = (roomId: string) => {
       if (roomId !== room.roomId) return;
-      setCallOngoing(false);
+      console.log('RTC session ended for room:', roomId);
+      // Add a delay before setting callOngoing to false to handle temporary interruptions
+      setTimeout(() => {
+        const session = room.client.matrixRTC.getRoomSession(room);
+        if (session.memberships.length === 0) {
+          setCallOngoing(false);
+        }
+      }, 2000); // 2 second delay to handle temporary interruptions
     };
 
     room.client.matrixRTC.on(MatrixRTCSessionManagerEvents.SessionStarted, start);
