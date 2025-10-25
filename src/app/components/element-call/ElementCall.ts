@@ -61,6 +61,7 @@ function createCallWidget(room: Room, client: MatrixClient, intent: string, them
     // Disable auto-camera like Discord
     startCameraOff: 'true',
     disableVideo: 'true',
+    auto_create: 'true',
     videoEnabled: 'false',
     // Additional video control parameters
     autoStartVideo: 'false',
