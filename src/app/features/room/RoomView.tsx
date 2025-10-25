@@ -23,7 +23,8 @@ import { useSetting } from '../../state/hooks/settings';
 import { useRoomPermissions } from '../../hooks/useRoomPermissions';
 import { useRoomCreators } from '../../hooks/useRoomCreators';
 import { useCallOngoing } from '../../hooks/useCallOngoing';
-import { CallView } from '../../components/element-call/CallView';
+import { useIsDirectRoom } from '../../hooks/useRoom';
+import { DraggableCallWindow } from '../../components/element-call/DraggableCallWindow';
 import { useCallContext } from '../../contexts/CallContext';
 
 const FN_KEYS_REGEX = /^F\d+$/;
@@ -74,19 +75,12 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   const powerLevels = usePowerLevelsContext();
   const creators = useRoomCreators(room);
 
-  const [showCall, setShowCall] = useState(false);
   const [callJoined, setCallJoined] = useState(false);
   const permissions = useRoomPermissions(creators, powerLevels);
   const canMessage = permissions.event(EventType.RoomMessage, mx.getSafeUserId());
   const callOngoing = useCallOngoing(room);
+  const isDirect = useIsDirectRoom();
   const { callState, startCall, endCall, updateCallEventSent } = useCallContext();
-
-  // Show call if there's an active call for this room
-  useEffect(() => {
-    if (callState.isActive && callState.roomId === roomId) {
-      setShowCall(true);
-    }
-  }, [callState.isActive, callState.roomId, roomId]);
 
   // Format duration in human-readable format
   const formatCallDuration = useCallback((durationMs: number): string => {
@@ -109,7 +103,6 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
       return;
     }
     
-    setShowCall(true);
     startCall(roomId);
   }, [callOngoing, startCall, roomId]);
 
@@ -151,7 +144,6 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
       console.error('Error terminating RTC session:', error);
     }
     
-    setShowCall(false);
     setCallJoined(false);
     endCall();
   }, [callState.callStartTime, callState.lastCallEventSent, canMessage, mx, roomId, formatCallDuration, room, updateCallEventSent, endCall]);
@@ -207,8 +199,7 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   useEffect(() => {
     const handleBeforeUnload = () => {
       // Force close call on page reload/unload
-      if (showCall || callOngoing) {
-        setShowCall(false);
+      if (callOngoing) {
         setCallJoined(false);
         endCall();
       }
@@ -220,7 +211,7 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [showCall, callOngoing, endCall]);
+  }, [callOngoing, endCall]);
 
   useKeyDown(
     window,
@@ -243,17 +234,15 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
     <Page ref={roomViewRef}>
       <RoomViewHeader onCallClick={handleCallStart} callJoined={callJoined} callOngoing={callOngoing} />
       <Box grow="Yes" direction="Row">
-        {showCall && (
-          <CallView
+        {callOngoing && (
+          <DraggableCallWindow
             onClose={handleCallClose}
-            onJoin={() => setCallJoined(true)}
-            onHangup={handleCallClose}
+            roomName={room.name || room.roomId}
           />
         )}
         <Box grow="Yes" direction="Column" style={{ width: 350 }}>
           <Box grow="Yes" direction="Column">
             <RoomTimeline
-              key={roomId}
               room={room}
               eventId={eventId}
               roomInputRef={roomInputRef}
