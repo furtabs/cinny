@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Box, Text, config } from 'folds';
 import { EventType, Room } from 'matrix-js-sdk';
 import { ReactEditor } from 'slate-react';
@@ -22,6 +22,7 @@ import { settingsAtom } from '../../state/settings';
 import { useSetting } from '../../state/hooks/settings';
 import { useRoomPermissions } from '../../hooks/useRoomPermissions';
 import { useRoomCreators } from '../../hooks/useRoomCreators';
+import { CallView } from '../../components/element-call/CallView';
 
 const FN_KEYS_REGEX = /^F\d+$/;
 const shouldFocusMessageField = (evt: KeyboardEvent): boolean => {
@@ -71,6 +72,8 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
   const powerLevels = usePowerLevelsContext();
   const creators = useRoomCreators(room);
 
+  const [showCall, setShowCall] = useState(false);
+  const [callJoined, setCallJoined] = useState(false);
   const permissions = useRoomPermissions(creators, powerLevels);
   const canMessage = permissions.event(EventType.RoomMessage, mx.getSafeUserId());
 
@@ -93,49 +96,60 @@ export function RoomView({ room, eventId }: { room: Room; eventId?: string }) {
 
   return (
     <Page ref={roomViewRef}>
-      <RoomViewHeader />
-      <Box grow="Yes" direction="Column">
-        <RoomTimeline
-          key={roomId}
-          room={room}
-          eventId={eventId}
-          roomInputRef={roomInputRef}
-          editor={editor}
-        />
-        <RoomViewTyping room={room} />
-      </Box>
-      <Box shrink="No" direction="Column">
-        <div style={{ padding: `0 ${config.space.S400}` }}>
-          {tombstoneEvent ? (
-            <RoomTombstone
-              roomId={roomId}
-              body={tombstoneEvent.getContent().body}
-              replacementRoomId={tombstoneEvent.getContent().replacement_room}
+      <RoomViewHeader onCallClick={() => setShowCall(true)} callJoined={callJoined} />
+      <Box grow="Yes" direction="Row">
+        {showCall && (
+          <CallView
+            onClose={() => setShowCall(false)}
+            onJoin={() => setCallJoined(true)}
+            onHangup={() => setCallJoined(false)}
+          />
+        )}
+        <Box grow="Yes" direction="Column" style={{ width: 350 }}>
+          <Box grow="Yes" direction="Column">
+            <RoomTimeline
+              key={roomId}
+              room={room}
+              eventId={eventId}
+              roomInputRef={roomInputRef}
+              editor={editor}
             />
-          ) : (
-            <>
-              {canMessage && (
-                <RoomInput
-                  room={room}
-                  editor={editor}
+            <RoomViewTyping room={room} />
+          </Box>
+          <Box shrink="No" direction="Column">
+            <div style={{ padding: `0 ${config.space.S400}` }}>
+              {tombstoneEvent ? (
+                <RoomTombstone
                   roomId={roomId}
-                  fileDropContainerRef={roomViewRef}
-                  ref={roomInputRef}
+                  body={tombstoneEvent.getContent().body}
+                  replacementRoomId={tombstoneEvent.getContent().replacement_room}
                 />
+              ) : (
+                <>
+                  {canMessage && (
+                    <RoomInput
+                      room={room}
+                      editor={editor}
+                      roomId={roomId}
+                      fileDropContainerRef={roomViewRef}
+                      ref={roomInputRef}
+                    />
+                  )}
+                  {!canMessage && (
+                    <RoomInputPlaceholder
+                      style={{ padding: config.space.S200 }}
+                      alignItems="Center"
+                      justifyContent="Center"
+                    >
+                      <Text align="Center">You do not have permission to post in this room</Text>
+                    </RoomInputPlaceholder>
+                  )}
+                </>
               )}
-              {!canMessage && (
-                <RoomInputPlaceholder
-                  style={{ padding: config.space.S200 }}
-                  alignItems="Center"
-                  justifyContent="Center"
-                >
-                  <Text align="Center">You do not have permission to post in this room</Text>
-                </RoomInputPlaceholder>
-              )}
-            </>
-          )}
-        </div>
-        {hideActivity ? <RoomViewFollowingPlaceholder /> : <RoomViewFollowing room={room} />}
+            </div>
+            {hideActivity ? <RoomViewFollowingPlaceholder /> : <RoomViewFollowing room={room} />}
+          </Box>
+        </Box>
       </Box>
     </Page>
   );

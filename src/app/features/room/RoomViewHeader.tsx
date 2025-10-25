@@ -69,6 +69,7 @@ import { useRoomNavigate } from '../../hooks/useRoomNavigate';
 import { useRoomCreators } from '../../hooks/useRoomCreators';
 import { useRoomPermissions } from '../../hooks/useRoomPermissions';
 import { InviteUserPrompt } from '../../components/invite-user-prompt';
+import { useCallOngoing } from '../../hooks/useCallOngoing';
 
 type RoomMenuProps = {
   room: Room;
@@ -253,8 +254,11 @@ const RoomMenu = forwardRef<HTMLDivElement, RoomMenuProps>(({ room, requestClose
     </Menu>
   );
 });
-
-export function RoomViewHeader() {
+interface RoomViewHeaderProps {
+  onCallClick?: () => void;
+  callJoined?: boolean;
+}
+export function RoomViewHeader({ onCallClick, callJoined }: RoomViewHeaderProps) {
   const navigate = useNavigate();
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
@@ -274,6 +278,7 @@ export function RoomViewHeader() {
   const avatarUrl = avatarMxc
     ? mxcUrlToHttp(mx, avatarMxc, useAuthentication, 96, 96, 'crop') ?? undefined
     : undefined;
+  const callOngoing = useCallOngoing(room);
 
   const [peopleDrawer, setPeopleDrawer] = useSetting(settingsAtom, 'isPeopleDrawer');
 
@@ -294,6 +299,9 @@ export function RoomViewHeader() {
   const handleOpenPinMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
     setPinMenuAnchor(evt.currentTarget.getBoundingClientRect());
   };
+
+  const notParticipatingState = callOngoing ? 'join' : 'start';
+  const buttonState = callJoined ? 'participating' : notParticipatingState;
 
   return (
     <PageHeader balance={screenSize === ScreenSize.Mobile}>
@@ -387,6 +395,33 @@ export function RoomViewHeader() {
               )}
             </TooltipProvider>
           )}
+
+          <TooltipProvider
+            position="Bottom"
+            offset={4}
+            tooltip={
+              <Tooltip>
+                {buttonState === 'start' && <Text>Start Call</Text>}
+                {buttonState === 'join' && <Text>Join Call</Text>}
+                {buttonState === 'participating' && <Text>Call Ongoing</Text>}
+              </Tooltip>
+            }
+          >
+            {(triggerRef) => (
+              <IconButton
+                variant={buttonState === 'join' ? 'Primary' : undefined}
+                style={{ position: 'relative' }}
+                onClick={onCallClick}
+                ref={triggerRef}
+                disabled={buttonState === 'participating'}
+                aria-pressed={!!pinMenuAnchor}
+              >
+                {buttonState === 'join' && <Text size="B400">Join</Text>}
+                <Icon size="400" src={Icons.Phone} filled={buttonState === 'participating'} />
+              </IconButton>
+            )}
+          </TooltipProvider>
+
           <TooltipProvider
             position="Bottom"
             offset={4}
