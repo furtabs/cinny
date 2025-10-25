@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Box, Button, Icon, Icons, Text } from 'folds';
 import { CallView } from './CallView';
 
@@ -54,7 +54,7 @@ export const DraggableCallWindow: React.FC<DraggableCallWindowProps> = ({
     setIsDragging(false);
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
@@ -147,3 +147,4 @@ export const DraggableCallWindow: React.FC<DraggableCallWindowProps> = ({
     </div>
   );
 };
+
