@@ -120,15 +120,15 @@ export const DraggableCallWindow: React.FC<DraggableCallWindowProps> = ({
         
         <Box alignItems="Center" gap="100">
           <Button
-            size="200"
-            variant="Surface"
+            size="300"
+            variant="Secondary"
             onClick={handleMinimize}
             radii="300"
           >
-            <Icon src={isMinimized ? Icons.Maximize : Icons.Minimize} size="200" />
+            <Icon src={isMinimized ? Icons.ChevronTop : Icons.ChevronBottom} size="200" />
           </Button>
           <Button
-            size="200"
+            size="300"
             variant="Critical"
             onClick={onClose}
             radii="300"
