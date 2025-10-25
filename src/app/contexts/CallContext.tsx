@@ -30,11 +30,15 @@ interface CallProviderProps {
 }
 
 export const CallProvider: React.FC<CallProviderProps> = ({ children }) => {
-  const [callState, setCallState] = useState<CallState>({
-    isActive: false,
-    roomId: null,
-    callStartTime: null,
-    lastCallEventSent: null,
+  const [callState, setCallState] = useState<CallState>(() => {
+    // Always start with no active call on page load/refresh
+    // This prevents auto-starting calls after refresh
+    return {
+      isActive: false,
+      roomId: null,
+      callStartTime: null,
+      lastCallEventSent: null,
+    };
   });
 
   const startCall = useCallback((roomId: string) => {

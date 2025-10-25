@@ -5,9 +5,9 @@ import { MatrixRTCSessionManagerEvents } from 'matrix-js-sdk/lib/matrixrtc/Matri
 
 export const useCallOngoing = (room: Room) => {
   const [callOngoing, setCallOngoing] = useState(() => {
-    // Initialize with current RTC session state
-    const session = room.client.matrixRTC.getRoomSession(room);
-    return session.memberships.length > 0;
+    // Initialize with no active call on page load/refresh
+    // This prevents auto-detecting calls after refresh
+    return false;
   });
 
   // Function to check and update call state
